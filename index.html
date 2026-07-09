@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DuoPlanner - Ortak Ajanda</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="p-4 max-w-md mx-auto bg-gray-50 text-gray-900 transition-colors duration-200">
+
+    <!-- 🔐 GÜVENLİK DUVARI (GİRİŞ EKRANI) -->
+    <div id="login_ekrani" class="space-y-6 mt-20 text-center">
+        <h1 class="text-3xl font-bold text-indigo-900">DuoPlanner</h1>
+        <p class="text-gray-600 text-sm mb-4">İki Kişilik Güvenli Ajanda ve Hafıza Merkezi</p>
+        
+        <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-left mb-6">
+            <p class="text-xs text-indigo-800 font-medium text-center">
+                <span class="font-bold">Test Sürümü:</span> Arayüzü denemek için aşağıdaki şifreyi kullanabilirsiniz.<br><br>
+                Erişim Şifresi: <span class="font-bold bg-white px-2 py-1 rounded text-indigo-600 border border-indigo-200">demo</span>
+            </p>
+        </div>
+
+        <div class="space-y-2">
+            <div class="relative">
+                <input type="password" id="giris_sifresi" placeholder="Şifreyi Girin" class="w-full p-3 bg-white border border-gray-300 rounded-xl text-center shadow-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none pr-12">
+                <button type="button" onclick="sifreGosterGizle()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors focus:outline-none text-lg">
+                    👁️
+                </button>
+            </div>
+            <p id="sifre_hata" class="text-red-500 text-sm hidden">Hatalı şifre girdiniz!</p>
+        </div>
+        <button onclick="sifreKontrol()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-semibold shadow-lg transition-colors">Giriş Yap</button>
+    </div>
+
+    <!-- ANA MENÜ -->
+    <div id="ana_menu" class="hidden mt-8 text-center">
+        <h1 class="text-3xl font-bold text-indigo-900 mb-2">DuoPlanner</h1>
+        <p class="text-sm text-gray-500 mb-6">Ortak Planlar & Anılar</p>
+        
+        <!-- Anılar Bölümü -->
+        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm mb-5 space-y-3">
+            <h2 class="text-xl font-bold text-gray-800 text-left mb-2 flex items-center gap-2">📖 Geçmiş Anılar</h2>
+            <button onclick="setTip('ani'); ekranDegistir('kategori_secim')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-semibold transition-colors">Anı Ekle</button>
+            <button onclick="setTip('ani'); ekranDegistir('listeleme'); verileriGetir();" class="w-full bg-indigo-100 text-indigo-800 py-3.5 rounded-xl font-semibold transition-colors">Anıları Listele</button>
+        </div>
+
+        <!-- Planlananlar Bölümü -->
+        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+            <h2 class="text-xl font-bold text-gray-800 text-left mb-2 flex items-center gap-2">🎯 Gelecek Planları</h2>
+            <button onclick="setTip('plan'); ekranDegistir('kategori_secim')" class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3.5 rounded-xl font-semibold transition-colors">Plan Ekle</button>
+            <button onclick="setTip('plan'); ekranDegistir('listeleme'); verileriGetir();" class="w-full bg-teal-100 text-teal-800 py-3.5 rounded-xl font-semibold transition-colors">Planları Listele</button>
+        </div>
+
+        <button onclick="cikisYap()" class="text-sm text-red-500 block mx-auto mt-8 py-2 px-4 rounded-lg hover:bg-red-50">Güvenli Çıkış</button>
+    </div>
+    
+    <!-- KATEGORİ SEÇİMİ -->
+    <div id="kategori_secim" class="hidden space-y-4 mt-10 text-center">
+        <h2 id="kategori_secim_baslik" class="text-2xl font-bold text-gray-800 mb-6">Kategori Seçin</h2>
+        <div class="grid grid-cols-2 gap-3">
+            <button onclick="formuAc('Film')" class="bg-indigo-500 hover:bg-indigo-600 text-white py-4 rounded-xl font-medium shadow-sm transition-colors">Film</button>
+            <button onclick="formuAc('Dizi')" class="bg-indigo-500 hover:bg-indigo-600 text-white py-4 rounded-xl font-medium shadow-sm transition-colors">Dizi</button>
+            <button onclick="formuAc('Kitap')" class="bg-indigo-500 hover:bg-indigo-600 text-white py-4 rounded-xl font-medium shadow-sm transition-colors">Kitap</button>
+            <button onclick="formuAc('Şehir')" class="bg-indigo-500 hover:bg-indigo-600 text-white py-4 rounded-xl font-medium shadow-sm transition-colors">Şehir</button>
+        </div>
+        <button onclick="ekranDegistir('ana_menu')" class="text-indigo-600 block mx-auto mt-6 font-medium">Geri</button>
+    </div>
+
+    <!-- FORM EKRANI -->
+    <div id="form_ekrani" class="hidden space-y-4 mt-6">
+        <h2 id="form_baslik" class="text-xl font-bold text-gray-800 border-b pb-2">Yeni Kayıt</h2>
+        <div id="dinamik_alanlar" class="space-y-3"></div>
+        <div class="pt-4 space-y-3">
+            <button id="kaydet_btn" onclick="kaydet()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold shadow-md transition-colors">Kaydet</button>
+            <button onclick="ekranDegistir('kategori_secim')" class="w-full text-center text-gray-600 font-medium py-2">Geri</button>
+        </div>
+    </div>
+
+    <!-- LİSTELEME EKRANI -->
+    <div id="listeleme" class="hidden mt-4">
+        <h2 id="liste_baslik" class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Kayıtlar</h2>
+        
+        <input type="text" id="arama" oninput="aramaYap()" placeholder="İsme Göre Ara..." class="w-full p-3 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 mb-4">
+        
+        <div class="mb-4">
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kategori Filtresi</div>
+            <div id="kategori_butonlari_container" class="flex gap-2 overflow-x-auto py-1 no-scrollbar"></div>
+        </div>
+
+        <div class="mb-4">
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Sıralama</div>
+            <div class="flex gap-2 overflow-x-auto py-1 no-scrollbar">
+                <button id="sort_son" onclick="sirala('son')" class="bg-indigo-600 text-white px-3.5 py-1.5 rounded-full text-xs font-medium shrink-0">Eklenme</button>
+                <button id="sort_tarih_yeni" onclick="sirala('tarih_yeni')" class="bg-gray-200 text-gray-700 px-3.5 py-1.5 rounded-full text-xs font-medium shrink-0">Tarih (Yeni)</button>
+                <button id="sort_tarih_eski" onclick="sirala('tarih_eski')" class="bg-gray-200 text-gray-700 px-3.5 py-1.5 rounded-full text-xs font-medium shrink-0">Tarih (Eski)</button>
+                <button id="sort_az" onclick="sirala('az')" class="bg-gray-200 text-gray-700 px-3.5 py-1.5 rounded-full text-xs font-medium shrink-0">A-Z</button>
+                <button id="sort_za" onclick="sirala('za')" class="bg-gray-200 text-gray-700 px-3.5 py-1.5 rounded-full text-xs font-medium shrink-0">Z-A</button>
+            </div>
+        </div>
+
+        <div id="liste_container" class="space-y-3 pt-2 pb-6"></div>
+        
+        <div class="fixed bottom-0 left-0 right-0 p-4 bg-gray-50 bg-opacity-90 backdrop-blur-sm border-t border-gray-200">
+            <button onclick="ekranDegistir('ana_menu')" class="w-full text-center text-indigo-700 font-bold bg-indigo-50 py-3 rounded-xl">Ana Menüye Dön</button>
+        </div>
+        <div class="h-16"></div>
+    </div>
+
+    <script>
+        const FIREBASE_BASE_URL = "https://duoplanner-40527-default-rtdb.europe-west1.firebasedatabase.app/demo_kayitlar";
+        const FIREBASE_URL = FIREBASE_BASE_URL + ".json";
+        const OZEL_SIFRE = "demo"; 
+        
+        let secilenKategori = "";
+        let tumAnilar = [];
+        let aktifKategoriFiltresi = "Tümü";
+        let aktifSiralaModu = "son";
+        let kayitTipi = "ani"; 
+        let duzenlenenId = null;
+
+        window.onload = function() {
+            if (localStorage.getItem("defter_giris") === "basarili") {
+                ekranDegistir("ana_menu");
+            }
+        };
+
+        // 👁️ YENİ EKLENEN: Şifre Göster/Gizle Fonksiyonu
+        function sifreGosterGizle() {
+            const input = document.getElementById("giris_sifresi");
+            if (input.type === "password") {
+                input.type = "text";
+            } else {
+                input.type = "password";
+            }
+        }
+
+        function setTip(tip) { kayitTipi = tip; }
+
+        function sifreKontrol() {
+            const girilen = document.getElementById("giris_sifresi").value;
+            const hataMetni = document.getElementById("sifre_hata");
+            
+            if (girilen === OZEL_SIFRE) {
+                localStorage.setItem("defter_giris", "basarili");
+                hataMetni.classList.add("hidden");
+                ekranDegistir("ana_menu");
+            } else {
+                hataMetni.classList.remove("hidden");
+            }
+        }
+
+        function cikisYap() {
+            localStorage.removeItem("defter_giris");
+            document.getElementById("giris_sifresi").value = "";
+            document.getElementById("giris_sifresi").type = "password"; // Çıkışta şifreyi tekrar gizle
+            ekranDegistir("login");
+        }
+
+        function filmSeriKontrol() {
+            const seriSecimi = document.getElementById("input_seri_mi").value;
+            const siraAlani = document.getElementById("sira_alani");
+            if (seriSecimi === "Evet") {
+                siraAlani.classList.remove("hidden");
+            } else {
+                siraAlani.classList.add("hidden");
+                const siraInput = document.getElementById("input_seri_sira");
+                if(siraInput) siraInput.value = "";
+            }
+        }
+
+        function formuAc(kat) {
+            duzenlenenId = null; 
+            document.getElementById("kaydet_btn").innerText = "Kaydet"; 
+            ekranDegistir("form", kat);
+        }
+
+        function ekranDegistir(ekran, kat = "") {
+            ["login_ekrani", "ana_menu", "kategori_secim", "form_ekrani", "listeleme"].forEach(id => {
+                document.getElementById(id).classList.add("hidden");
+            });
+
+            if(ekran === "login") document.getElementById("login_ekrani").classList.remove("hidden");
+            if(ekran === "ana_menu") document.getElementById("ana_menu").classList.remove("hidden");
+            
+            if(ekran === "kategori_secim") {
+                document.getElementById("kategori_secim_baslik").innerText = kayitTipi === 'plan' ? "Ne Planlıyoruz?" : "Hangi Kategori?";
+                document.getElementById("kategori_secim").classList.remove("hidden");
+            }
+            
+            if(ekran === "form") {
+                secilenKategori = kat;
+                const turMetni = kayitTipi === "plan" ? "Planı" : "Anısı";
+                document.getElementById("form_baslik").innerText = duzenlenenId ? kat + " Düzenle" : `Yeni ${kat} ${turMetni}`;
+                const alanlarContainer = document.getElementById("dinamik_alanlar");
+                
+                let htmlIcerik = `<input type="text" id="input_baslik" placeholder="${kat} Adı" class="w-full p-3.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">`;
+
+                if (kat === "Kitap") {
+                    htmlIcerik += `<input type="text" id="input_yazar" placeholder="Yazar Adı" class="w-full p-3.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none"><div class="flex gap-3"><input type="text" id="input_yayinevi" placeholder="Yayınevi" class="w-1/2 p-3.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none"><input type="number" id="input_sayfa" placeholder="Sayfa" class="w-1/2 p-3.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none"></div>`;
+                } else if (kat === "Film") {
+                    htmlIcerik += `<div class="flex items-center justify-between p-3.5 bg-white border border-gray-300 rounded-xl shadow-sm"><span class="text-gray-700 font-medium">Seri mi?</span><select id="input_seri_mi" onchange="filmSeriKontrol()" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg p-2 outline-none"><option value="Hayır">Hayır</option><option value="Evet">Evet</option></select></div><div id="sira_alani" class="hidden"><input type="number" id="input_seri_sira" placeholder="Seri Kaçıncı Film?" class="w-full p-3.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none"></div>`;
+                } else if (kat === "Dizi") {
+                    htmlIcerik += `<input type="text" id="input_sezon" placeholder="Hangi Sezon / Bölüm?" class="w-full p-3.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none">`;
+                } else if (kat === "Şehir") {
+                    htmlIcerik += `<input type="text" id="input_konum" placeholder="Konum / Detaylı Şehir" class="w-full p-3.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none">`;
+                }
+
+                htmlIcerik += `<textarea id="input_detay" placeholder="Notlarınız / Düşünceleriniz" rows="3" class="w-full p-3.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
+                <div class="bg-white p-3.5 border border-gray-300 rounded-xl shadow-sm">
+                    <label class="text-xs text-gray-500 block mb-1 uppercase font-bold tracking-wider">${kayitTipi === 'plan' ? 'Planlanan Tarih (İsteğe Bağlı)' : 'Gerçekleşme Tarihi (Zorunlu)'}</label>
+                    <input type="date" id="input_tarih" class="w-full bg-transparent text-gray-900 outline-none">
+                </div>`;
+                
+                alanlarContainer.innerHTML = htmlIcerik;
+                
+                if(!duzenlenenId) { 
+                    if(kayitTipi === "ani") {
+                        document.getElementById("input_tarih").valueAsDate = new Date();
+                    } else {
+                        document.getElementById("input_tarih").value = "";
+                    }
+                }
+                
+                document.getElementById("form_ekrani").classList.remove("hidden");
+            }
+            if(ekran === "listeleme") {
+                document.getElementById("liste_baslik").innerText = kayitTipi === "plan" ? "🎯 Planlananlar Listesi" : "📖 Anı Listesi";
+                document.getElementById("listeleme").classList.remove("hidden");
+            }
+        }
+
+        async function kaydet() {
+            const dateInput = document.getElementById("input_tarih").value;
+            
+            if (kayitTipi === "ani" && !dateInput) {
+                alert("Lütfen geçmiş bir anıyı kaydetmek için gerçekleşme tarihi seçiniz.");
+                return;
+            }
+
+            const baslik = document.getElementById("input_baslik").value || "İsimsiz";
+            const notlar = document.getElementById("input_detay").value || "";
+            
+            let tarih = "";
+            if (dateInput) {
+                const rawDate = new Date(dateInput);
+                tarih = rawDate.toLocaleDateString("tr-TR");
+            }
+
+            let yeniKayit = { kategori: secilenKategori, baslik: baslik, notlar: notlar, olay_tarihi: tarih, tur: kayitTipi };
+
+            if (secilenKategori === "Kitap") {
+                yeniKayit.yazar = document.getElementById("input_yazar").value || "";
+                yeniKayit.yayinevi = document.getElementById("input_yayinevi").value || "";
+                yeniKayit.sayfa_sayisi = document.getElementById("input_sayfa").value || "";
+            } else if (secilenKategori === "Film") {
+                const seriMi = document.getElementById("input_seri_mi").value;
+                yeniKayit.seri_mi = seriMi;
+                if (seriMi === "Evet") { yeniKayit.seri_sira = document.getElementById("input_seri_sira").value || ""; }
+            } else if (secilenKategori === "Dizi") {
+                yeniKayit.sezon = document.getElementById("input_sezon").value || "";
+            } else if (secilenKategori === "Şehir") {
+                yeniKayit.konum = document.getElementById("input_konum").value || "";
+            }
+
+            if (duzenlenenId) {
+                await fetch(`${FIREBASE_BASE_URL}/${duzenlenenId}.json`, { method: "PUT", body: JSON.stringify(yeniKayit) });
+                duzenlenenId = null;
+            } else {
+                await fetch(FIREBASE_URL, { method: "POST", body: JSON.stringify(yeniKayit) });
+            }
+            
+            if(document.getElementById("kaydet_btn").innerText === "Güncelle") {
+                ekranDegistir("listeleme");
+                verileriGetir();
+            } else {
+                ekranDegistir("ana_menu");
+            }
+        }
+
+        async function verileriGetir() {
+            const res = await fetch(FIREBASE_URL);
+            const data = await res.json();
+            tumAnilar = [];
+            let kategoriler = new Set(["Tümü"]);
+            
+            if(data) {
+                Object.entries(data).forEach(([key, val]) => {
+                    val.id = key; 
+                    val.tur = val.tur || 'ani'; 
+                    
+                    if(val.tur === kayitTipi) {
+                        tumAnilar.push(val);
+                        if(val.kategori) kategoriler.add(val.kategori);
+                    }
+                });
+            }
+            
+            kategoriButonlariniCiz(Array.from(kategoriler));
+            islemYap();
+        }
+
+        async function kayitSil(id) {
+            if (confirm("Bu kaydı kalıcı olarak silmek istediğinize emin misiniz?")) {
+                await fetch(`${FIREBASE_BASE_URL}/${id}.json`, { method: "DELETE" });
+                verileriGetir(); 
+            }
+        }
+
+        function kayitDuzenle(id) {
+            const kayit = tumAnilar.find(a => a.id === id);
+            if (!kayit) return;
+
+            duzenlenenId = id;
+            kayitTipi = kayit.tur || 'ani';
+            document.getElementById("kaydet_btn").innerText = "Güncelle";
+            ekranDegistir("form", kayit.kategori);
+
+            document.getElementById("input_baslik").value = kayit.baslik || "";
+            document.getElementById("input_detay").value = kayit.notlar || "";
+            
+            if (kayit.olay_tarihi && kayit.olay_tarihi.includes(".")) {
+                const parcalar = kayit.olay_tarihi.split(".");
+                if(parcalar.length === 3) {
+                    const yyyy = parcalar[2];
+                    const mm = parcalar[1].padStart(2, '0');
+                    const dd = parcalar[0].padStart(2, '0');
+                    document.getElementById("input_tarih").value = `${yyyy}-${mm}-${dd}`;
+                }
+            }
+
+            if (kayit.kategori === "Kitap") {
+                document.getElementById("input_yazar").value = kayit.yazar || "";
+                document.getElementById("input_yayinevi").value = kayit.yayinevi || "";
+                document.getElementById("input_sayfa").value = kayit.sayfa_sayisi || "";
+            } else if (kayit.kategori === "Film") {
+                document.getElementById("input_seri_mi").value = kayit.seri_mi || "Hayır";
+                filmSeriKontrol();
+                if (kayit.seri_mi === "Evet") { document.getElementById("input_seri_sira").value = kayit.seri_sira || ""; }
+            } else if (kayit.kategori === "Dizi") {
+                document.getElementById("input_sezon").value = kayit.sezon || "";
+            } else if (kayit.kategori === "Şehir") {
+                document.getElementById("input_konum").value = kayit.konum || "";
+            }
+        }
+
+        function kategoriButonlariniCiz(katListesi) {
+            const btnContainer = document.getElementById("kategori_butonlari_container");
+            btnContainer.innerHTML = "";
+            
+            katListesi.forEach(kat => {
+                const aktifMi = kat === aktifKategoriFiltresi;
+                const cls = aktifMi ? "bg-indigo-600 text-white text-xs px-3.5 py-1.5 rounded-full font-medium shrink-0 shadow-sm transition-colors" : "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs px-3.5 py-1.5 rounded-full font-medium shrink-0 transition-colors";
+                btnContainer.innerHTML += `<button onclick="kategoriFiltrele('${kat}')" class="${cls}">${kat}</button>`;
+            });
+        }
+
+        function kategoriFiltrele(kat) { aktifKategoriFiltresi = kat; islemYap(); }
+
+        function sirala(mod) {
+            aktifSiralaModu = mod;
+            ["son", "tarih_yeni", "tarih_eski", "az", "za"].forEach(m => {
+                const el = document.getElementById("sort_" + m);
+                if(el) {
+                    if (m === mod) {
+                        el.className = "bg-indigo-600 text-white px-3.5 py-1.5 rounded-full text-xs font-medium shrink-0 shadow-sm transition-colors";
+                    } else {
+                        el.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 px-3.5 py-1.5 rounded-full text-xs font-medium shrink-0 transition-colors";
+                    }
+                }
+            });
+            islemYap();
+        }
+
+        function islemYap() {
+            let islenmisListe = [...tumAnilar];
+            if (aktifKategoriFiltresi !== "Tümü") { islenmisListe = islenmisListe.filter(i => i.kategori === aktifKategoriFiltresi); }
+            const terim = document.getElementById("arama").value.toLowerCase();
+            if (terim) { islenmisListe = islenmisListe.filter(i => i.baslik.toLowerCase().includes(terim)); }
+
+            if (aktifSiralaModu === "son") { islenmisListe.reverse();
+            } else if (aktifSiralaModu === "az") { islenmisListe.sort((a, b) => (a.baslik || '').localeCompare(b.baslik || ''));
+            } else if (aktifSiralaModu === "za") { islenmisListe.sort((a, b) => (b.baslik || '').localeCompare(a.baslik || ''));
+            } else if (aktifSiralaModu === "tarih_yeni") {
+                islenmisListe.sort((a, b) => {
+                    const dateA = a.olay_tarihi ? a.olay_tarihi.split('.').reverse().join('') : '00000000';
+                    const dateB = b.olay_tarihi ? b.olay_tarihi.split('.').reverse().join('') : '00000000';
+                    return dateB.localeCompare(dateA);
+                });
+            } else if (aktifSiralaModu === "tarih_eski") {
+                islenmisListe.sort((a, b) => {
+                    const dateA = a.olay_tarihi ? a.olay_tarihi.split('.').reverse().join('') : '99999999';
+                    const dateB = b.olay_tarihi ? b.olay_tarihi.split('.').reverse().join('') : '99999999';
+                    return dateA.localeCompare(dateB);
+                });
+            }
+
+            let kategoriler = new Set(["Tümü"]);
+            tumAnilar.forEach(v => { if(v.kategori) kategoriler.add(v.kategori); });
+            kategoriButonlariniCiz(Array.from(kategoriler));
+            arayuzuCiz(islenmisListe);
+        }
+
+        function aramaYap() { islemYap(); }
+
+        function arayuzuCiz(liste) {
+            const container = document.getElementById("liste_container");
+            container.innerHTML = "";
+            if(liste.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 opacity-60"><div class="text-4xl mb-3">📭</div><p class="text-gray-500 text-sm">Gösterilecek kayıt bulunamadı.</p></div>`;
+                return;
+            }
+            liste.forEach(i => {
+                let ekBilgi = "";
+                if (i.kategori === "Kitap") {
+                    if (i.yazar) ekBilgi += `<div class="flex items-center gap-1.5"><span class="font-bold opacity-60 text-[11px] uppercase">Yazar:</span> <span>${i.yazar}</span></div>`;
+                    if (i.yayinevi) ekBilgi += `<div class="flex items-center gap-1.5"><span class="font-bold opacity-60 text-[11px] uppercase">Yayınevi:</span> <span>${i.yayinevi}</span></div>`;
+                    if (i.sayfa_sayisi) ekBilgi += `<div class="flex items-center gap-1.5"><span class="font-bold opacity-60 text-[11px] uppercase">Sayfa:</span> <span>${i.sayfa_sayisi}</span></div>`;
+                } else if (i.kategori === "Film") {
+                    ekBilgi += `<div class="flex items-center gap-1.5"><span class="font-bold opacity-60 text-[11px] uppercase">Seri:</span> <span>${i.seri_mi || 'Hayır'}</span></div>`;
+                    if (i.seri_mi === "Evet" && i.seri_sira) { ekBilgi += `<div class="flex items-center gap-1.5"><span class="font-bold opacity-60 text-[11px] uppercase">Sıra:</span> <span>${i.seri_sira}. Film</span></div>`; }
+                } else if (i.kategori === "Dizi") {
+                    if (i.sezon) ekBilgi += `<div class="flex items-center gap-1.5"><span class="font-bold opacity-60 text-[11px] uppercase">Sezon/Bölüm:</span> <span>${i.sezon}</span></div>`;
+                } else if (i.kategori === "Şehir" && i.konum) {
+                    ekBilgi += `<div class="flex items-center gap-1.5"><span class="font-bold opacity-60 text-[11px] uppercase">Konum:</span> <span>${i.konum}</span></div>`;
+                }
+
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-left relative overflow-hidden group">
+                        <div class="absolute left-0 top-0 bottom-0 w-1 ${kayitTipi === 'plan' ? 'bg-teal-400' : 'bg-indigo-400'}"></div>
+                        <div class="pl-2">
+                            <div class="flex justify-between items-start mb-1">
+                                <h3 class="font-bold text-gray-800 text-lg leading-tight pr-2">${i.baslik}</h3>
+                                <span class="text-[10px] font-bold ${kayitTipi === 'plan' ? 'bg-teal-50 text-teal-600' : 'bg-indigo-50 text-indigo-600'} px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">${i.kategori}</span>
+                            </div>
+                            <div class="text-xs text-gray-400 font-medium mb-3 flex items-center gap-1.5">📅 <span>${i.olay_tarihi || 'Belirtilmedi'}</span></div>
+                            ${ekBilgi ? `<div class="text-[13px] text-gray-600 space-y-1 bg-gray-50/80 p-2.5 rounded-xl border border-gray-100 mb-3">${ekBilgi}</div>` : ''}
+                            ${i.notlar ? `<div class="text-gray-700 text-[13.5px] leading-relaxed bg-${kayitTipi === 'plan' ? 'teal' : 'indigo'}-50/30 p-3 rounded-xl border border-${kayitTipi === 'plan' ? 'teal' : 'indigo'}-50 italic">"${i.notlar}"</div>` : ''}
+                            <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
+                                <button onclick="kayitDuzenle('${i.id}')" class="text-blue-600 text-xs font-bold px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">Düzenle</button>
+                                <button onclick="kayitSil('${i.id}')" class="text-red-600 text-xs font-bold px-3.5 py-1.5 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">Sil</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+    </script>
+</body>
+</html>
