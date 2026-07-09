@@ -64,6 +64,7 @@ The project is open-source and designed to work independently. To create your ow
 *Bu proje, günlük bir problemi hafif ve sunucusuz bir mimari ile çözmek amacıyla geliştirilmiş bir mühendislik pratiğidir. 
 This project is an engineering practice developed to solve a daily problem using a lightweight and serverless architecture.*
 
-<img width="482" height="843" alt="Screenshot from 2026-07-10 02-15-55" src="https://github.com/user-attachments/assets/16579efe-4f6f-4445-8b9f-a367a832f3f3" />
 <img width="482" height="843" alt="Screenshot from 2026-07-10 02-15-42" src="https://github.com/user-attachments/assets/888b4988-facb-4626-924e-98c4edbf5661" />
+<img width="482" height="843" alt="Screenshot from 2026-07-10 02-15-55" src="https://github.com/user-attachments/assets/16579efe-4f6f-4445-8b9f-a367a832f3f3" />
+
 
